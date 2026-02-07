@@ -1,0 +1,257 @@
+:root {
+  --bg: #0b0f14;
+  --panel: #141a22;
+  --panel-2: #1b2330;
+  --accent: #f0c84b;
+  --text: #e6eef7;
+  --muted: #9aa6b2;
+  --outline: rgba(255, 255, 255, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+  font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.viewer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--outline);
+}
+
+.viewer-header .title {
+  font-weight: 600;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn {
+  border: 1px solid var(--outline);
+  background: var(--panel-2);
+  color: var(--text);
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.btn.ghost {
+  background: transparent;
+}
+
+.viewer-shell {
+  display: grid;
+  grid-template-columns: 1fr 260px;
+  height: calc(100vh - 56px);
+}
+
+body.vr-mode .viewer-shell {
+  grid-template-columns: 1fr;
+}
+
+body.vr-mode .side-panel {
+  display: none;
+}
+
+.pano {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 40% 40%, #202a36, #0c0f14 60%);
+  width: 100%;
+  height: 100%;
+}
+
+.pano-single {
+  width: 100%;
+  height: 100%;
+}
+
+.pano-vr {
+  display: none;
+  width: 100%;
+  height: 100%;
+}
+
+.pano-pane {
+  flex: 1;
+  height: 100%;
+}
+
+body.vr-mode .pano-single {
+  display: none;
+}
+
+body.vr-mode .pano-vr {
+  display: flex;
+}
+.placeholder {
+  color: var(--muted);
+}
+
+.side-panel {
+  background: var(--panel);
+  border-left: 1px solid var(--outline);
+  padding: 16px;
+}
+
+.section-title {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+
+.scene-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.scene-list button {
+  background: var(--panel-2);
+  border: 1px solid var(--outline);
+  color: var(--text);
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.hotspot-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 7, 10, 0.7);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.hotspot-modal.visible {
+  display: flex;
+}
+
+.modal-content {
+  background: var(--panel);
+  border: 1px solid var(--outline);
+  border-radius: 12px;
+  width: min(720px, 100%);
+  max-height: 80vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--outline);
+}
+
+.modal-body {
+  padding: 16px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.block {
+  border: 1px solid var(--outline);
+  border-radius: 8px;
+  padding: 10px;
+  background: #10161e;
+}
+
+.block h4 {
+  margin: 0 0 8px 0;
+  font-size: 12px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.block a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.block a:hover {
+  text-decoration: underline;
+}
+
+.block img,
+.block video {
+  width: 100%;
+  border-radius: 6px;
+}
+
+.block audio {
+  width: 100%;
+}
+
+.hotspot {
+  position: relative;
+  width: 15px;
+  height: 15px;
+  margin-left: 0;
+  margin-top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(240, 200, 75, 0.9);
+  border-radius: 50%;
+  color: #0b0f14;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 5px 12px rgba(0, 0, 0, 0.3);
+  transform: translate(-50%, -50%) scale(var(--hotspot-scale, 1));
+  transform-origin: center center;
+}
+
+.hotspot-icon {
+  width: 62%;
+  height: 62%;
+  object-fit: contain;
+}
+
+.hotspot-default {
+  color: transparent;
+}
+
+.hotspot-default::after {
+  content: 'i';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  color: #0b0f14;
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 700;
+}
+
+@media (max-width: 900px) {
+  .viewer-shell {
+    grid-template-columns: 1fr;
+  }
+  .side-panel {
+    border-left: none;
+    border-top: 1px solid var(--outline);
+  }
+}
