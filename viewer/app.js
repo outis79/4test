@@ -231,6 +231,15 @@ function buildVrViewers(project) {
 }
 
 function buildSceneRuntime(sceneData) {
+  if (sceneData?.sourceImage?.dataUrl) {
+    const width = sceneData.sourceImage.width || sceneData.faceSize || 4096;
+    return {
+      source: Marzipano.ImageUrlSource.fromString(sceneData.sourceImage.dataUrl),
+      geometry: new Marzipano.EquirectGeometry([{ width }]),
+      limiter: Marzipano.RectilinearView.limit.traditional(width, Math.PI, Math.PI)
+    };
+  }
+
   const levels = (sceneData.levels || []).filter((level) => level.size && level.tileSize);
   const hasSelectable = levels.some((level) => !level.fallbackOnly);
   if (levels.length && hasSelectable) {
@@ -243,15 +252,6 @@ function buildSceneRuntime(sceneData) {
       ),
       geometry: new Marzipano.CubeGeometry(levels),
       limiter: Marzipano.RectilinearView.limit.traditional(sceneData.faceSize || 2048, Math.PI, Math.PI)
-    };
-  }
-
-  if (sceneData?.sourceImage?.dataUrl) {
-    const width = sceneData.sourceImage.width || sceneData.faceSize || 4096;
-    return {
-      source: Marzipano.ImageUrlSource.fromString(sceneData.sourceImage.dataUrl),
-      geometry: new Marzipano.EquirectGeometry([{ width }]),
-      limiter: Marzipano.RectilinearView.limit.traditional(width, Math.PI, Math.PI)
     };
   }
 
