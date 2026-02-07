@@ -47,6 +47,8 @@ let scenes = [];
 let currentScene = null;
 let gyroEnabled = false;
 let gyroMethod = null;
+let gyroFallbackListener = null;
+let gyroFallbackZeroAlpha = null;
 let projectData = null;
 
 function openModal(hotspot) {
@@ -320,6 +322,10 @@ function applyHotspotScale(scene) {
 }
 
 async function requestMotionPermission() {
+  if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+    const result = await DeviceOrientationEvent.requestPermission();
+    return result === 'granted';
+  }
   if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
     const result = await DeviceMotionEvent.requestPermission();
     return result === 'granted';
@@ -328,8 +334,15 @@ async function requestMotionPermission() {
 }
 
 async function toggleGyro() {
-  if (!activeViewer || !window.Marzipano?.DeviceOrientationControlMethod) {
-    alert('Gyro is not supported on this device.');
+  if (!activeViewer || !currentScene) {
+    return;
+  }
+
+  const canUseMarzipanoGyro = Boolean(window.Marzipano?.DeviceOrientationControlMethod);
+  const canUseDeviceOrientation = typeof window.DeviceOrientationEvent !== 'undefined';
+
+  if (!canUseMarzipanoGyro && !canUseDeviceOrientation) {
+    alert('Gyro is not available in this browser.');
     return;
   }
 
@@ -340,24 +353,46 @@ async function toggleGyro() {
       return;
     }
 
-    gyroMethod = gyroMethod || new Marzipano.DeviceOrientationControlMethod();
-    const controls = activeViewer.controls();
+    if (canUseMarzipanoGyro) {
+      gyroMethod = gyroMethod || new Marzipano.DeviceOrientationControlMethod();
+      const controls = activeViewer.controls();
 
-    if (controls.enableMethod && controls.disableMethod) {
-      if (!gyroEnabled) {
-        controls.registerMethod('gyro', gyroMethod, false);
-        controls.enableMethod('gyro');
+      if (controls.enableMethod && controls.disableMethod) {
+        if (!gyroEnabled) {
+          controls.registerMethod('gyro', gyroMethod, false);
+          controls.enableMethod('gyro');
+        }
+      } else {
+        controls.registerMethod('gyro', gyroMethod, true);
       }
     } else {
-      controls.registerMethod('gyro', gyroMethod, true);
+      gyroFallbackZeroAlpha = null;
+      gyroFallbackListener = (event) => {
+        if (event.alpha == null || event.beta == null) return;
+        if (gyroFallbackZeroAlpha == null) {
+          gyroFallbackZeroAlpha = event.alpha;
+        }
+        const yawDeg = event.alpha - gyroFallbackZeroAlpha;
+        const pitchDeg = event.beta;
+        const yaw = (yawDeg * Math.PI) / 180;
+        const pitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, (-pitchDeg * Math.PI) / 180));
+        currentScene.view.setParameters({ yaw, pitch });
+      };
+      window.addEventListener('deviceorientation', gyroFallbackListener, true);
     }
 
     gyroEnabled = true;
     btnGyro.textContent = 'Disable Gyro';
   } else {
-    const controls = activeViewer.controls();
-    if (controls.disableMethod) {
-      controls.disableMethod('gyro');
+    if (gyroFallbackListener) {
+      window.removeEventListener('deviceorientation', gyroFallbackListener, true);
+      gyroFallbackListener = null;
+      gyroFallbackZeroAlpha = null;
+    } else {
+      const controls = activeViewer.controls();
+      if (controls.disableMethod) {
+        controls.disableMethod('gyro');
+      }
     }
     gyroEnabled = false;
     btnGyro.textContent = 'Enable Gyro';
