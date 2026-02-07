@@ -231,6 +231,21 @@ function buildVrViewers(project) {
 }
 
 function buildSceneRuntime(sceneData) {
+  const levels = (sceneData.levels || []).filter((level) => level.size && level.tileSize);
+  const hasSelectable = levels.some((level) => !level.fallbackOnly);
+  if (levels.length && hasSelectable) {
+    const tilesPath = sceneData.tilesPath || `tiles/${sceneData.id}`;
+    const previewPath = sceneData.previewPath || `${tilesPath}/preview.jpg`;
+    return {
+      source: Marzipano.ImageUrlSource.fromString(
+        `${tilesPath}/{z}/{f}/{y}/{x}.jpg`,
+        { cubeMapPreviewUrl: previewPath }
+      ),
+      geometry: new Marzipano.CubeGeometry(levels),
+      limiter: Marzipano.RectilinearView.limit.traditional(sceneData.faceSize || 2048, Math.PI, Math.PI)
+    };
+  }
+
   if (sceneData?.sourceImage?.dataUrl) {
     const width = sceneData.sourceImage.width || sceneData.faceSize || 4096;
     return {
@@ -240,22 +255,7 @@ function buildSceneRuntime(sceneData) {
     };
   }
 
-  const levels = (sceneData.levels || []).filter((level) => level.size && level.tileSize);
-  const hasSelectable = levels.some((level) => !level.fallbackOnly);
-  if (!levels.length || !hasSelectable) {
-    return null;
-  }
-
-  const tilesPath = sceneData.tilesPath || `tiles/${sceneData.id}`;
-  const previewPath = sceneData.previewPath || `${tilesPath}/preview.jpg`;
-  return {
-    source: Marzipano.ImageUrlSource.fromString(
-      `${tilesPath}/{z}/{f}/{y}/{x}.jpg`,
-      { cubeMapPreviewUrl: previewPath }
-    ),
-    geometry: new Marzipano.CubeGeometry(levels),
-    limiter: Marzipano.RectilinearView.limit.traditional(sceneData.faceSize || 2048, Math.PI, Math.PI)
-  };
+  return null;
 }
 
 function createHotspotElement(hotspot) {
@@ -353,19 +353,8 @@ async function toggleGyro() {
       return;
     }
 
-    if (canUseMarzipanoGyro) {
-      gyroMethod = gyroMethod || new Marzipano.DeviceOrientationControlMethod();
-      const controls = activeViewer.controls();
-
-      if (controls.enableMethod && controls.disableMethod) {
-        if (!gyroEnabled) {
-          controls.registerMethod('gyro', gyroMethod, false);
-          controls.enableMethod('gyro');
-        }
-      } else {
-        controls.registerMethod('gyro', gyroMethod, true);
-      }
-    } else {
+    // Prefer native deviceorientation when available (more compatible on mobile browsers).
+    if (canUseDeviceOrientation) {
       gyroFallbackZeroAlpha = null;
       gyroFallbackListener = (event) => {
         if (event.alpha == null || event.beta == null) return;
@@ -379,6 +368,15 @@ async function toggleGyro() {
         currentScene.view.setParameters({ yaw, pitch });
       };
       window.addEventListener('deviceorientation', gyroFallbackListener, true);
+    } else if (canUseMarzipanoGyro) {
+      gyroMethod = gyroMethod || new Marzipano.DeviceOrientationControlMethod();
+      const controls = activeViewer.controls();
+      if (controls.enableMethod && controls.disableMethod) {
+        controls.registerMethod('gyro', gyroMethod, false);
+        controls.enableMethod('gyro');
+      } else {
+        controls.registerMethod('gyro', gyroMethod, true);
+      }
     }
 
     gyroEnabled = true;
